@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify to YouTube Music Transfer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1db954 0%, #1ed760 50%, #ff0000 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .auth-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .auth-box {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .auth-box h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .btn-spotify {
+            background: #1db954;
+            color: white;
+        }
+        
+        .btn-spotify:hover {
+            background: #1ed760;
+        }
+        
+        .btn-youtube {
+            background: #ff0000;
+            color: white;
+        }
+        
+        .btn-youtube:hover {
+            background: #cc0000;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .status-connected {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .item-list {
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+        
+        .item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .item:hover {
+            background: #f8f9fa;
+        }
+        
+        .item input[type="checkbox"] {
+            margin-right: 12px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .item-icon {
+            margin-right: 12px;
+            font-size: 20px;
+        }
+        
+        .item-info {
+            flex: 1;
+        }
+        
+        .item-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .item-meta {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .transfer-status {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+        
+        .status-icon {
+            font-size: 20px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .section-title {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .selection-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0,0,0,.1);
+            border-radius: 50%;
+            border-top-color: #007bff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .auth-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎵 Spotify → YouTube Music</h1>
+            <p>Transfer your playlists and podcasts seamlessly</p>
+        </div>
+        
+        <!-- Step 1: Authentication -->
+        <div id="step1" class="card">
+            <h2 class="section-title">Step 1: Connect Your Accounts</h2>
+            
+            <div class="alert alert-warning">
+                <strong>⚠️ Setup Required:</strong> This is a template that requires OAuth credentials. You'll need to:
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Create a Spotify Developer App at <a href="https://developer.spotify.com/dashboard" target="_blank">developer.spotify.com</a></li>
+                    <li>Create a Google Cloud Project and enable YouTube Data API v3</li>
+                    <li>Add your OAuth credentials to the code</li>
+                </ul>
+            </div>
+            
+            <div class="auth-section">
+                <div class="auth-box">
+                    <h3>🎵 Spotify</h3>
+                    <div id="spotifyStatus" class="status status-disconnected">Not Connected</div>
+                    <button class="btn btn-spotify" onclick="connectSpotify()">Connect Spotify</button>
+                </div>
+                
+                <div class="auth-box">
+                    <h3>📺 YouTube Music</h3>
+                    <div id="youtubeStatus" class="status status-disconnected">Not Connected</div>
+                    <button class="btn btn-youtube" onclick="connectYouTube()">Connect YouTube Music</button>
+                </div>
+            </div>
+            
+            <button id="continueBtn" class="btn btn-primary" onclick="loadSpotifyData()" disabled>
+                Continue to Transfer →
+            </button>
+        </div>
+        
+        <!-- Step 2: Selection -->
+        <div id="step2" class="card hidden">
+            <h2 class="section-title">Step 2: Select Items to Transfer</h2>
+            
+            <div class="selection-controls">
+                <button class="btn btn-secondary" onclick="selectAll()">Select All</button>
+                <button class="btn btn-secondary" onclick="deselectAll()">Deselect All</button>
+            </div>
+            
+            <div id="playlistSection">
+                <h3>🎵 Playlists (<span id="playlistCount">0</span>)</h3>
+                <div id="playlistList" class="item-list"></div>
+            </div>
+            
+            <div id="podcastSection">
+                <h3>🎙️ Podcasts (<span id="podcastCount">0</span>)</h3>
+                <div id="podcastList" class="item-list"></div>
+            </div>
+            
+            <button class="btn btn-primary" onclick="startTransfer()">
+                Transfer Selected Items (<span id="selectedCount">0</span>)
+            </button>
+        </div>
+        
+        <!-- Step 3: Transfer -->
+        <div id="step3" class="card hidden">
+            <h2 class="section-title">Step 3: Transfer Progress</h2>
+            <div id="transferList"></div>
+            <button class="btn btn-secondary" onclick="backToSelection()">Transfer More Items</button>
+        </div>
+    </div>
+
+    <script>
+        // Configuration - Replace with your actual credentials
+        const SPOTIFY_CLIENT_ID = '146cb61f478949468f76f931e2c7977e';
+        const YOUTUBE_CLIENT_ID = '1174696289-ata6a5tjo51mh2e6er7tt11f4pv2sa4s.apps.googleusercontent.com';
+        const REDIRECT_URI = window.location.origin + window.location.pathname;
+        
+        // State
+        let spotifyToken = null;
+        let youtubeToken = null;
+        let playlists = [];
+        let podcasts = [];
+        let selectedItems = new Set();
+        
+        // Check for OAuth callback
+        window.addEventListener('load', () => {
+            const hash = window.location.hash.substring(1);
+            const params = new URLSearchParams(hash);
+            const token = params.get('access_token');
+            const state = params.get('state');
+            
+            if (token && state) {
+                if (state === 'spotify') {
+                    spotifyToken = token;
+                    updateAuthStatus('spotify', true);
+                } else if (state === 'youtube') {
+                    youtubeToken = token;
+                    updateAuthStatus('youtube', true);
+                }
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        });
+        
+        function connectSpotify() {
+            const scopes = 'playlist-read-private playlist-read-collaborative user-library-read';
+            const url = `https://accounts.spotify.com/authorize?client_id=${SPOTIFY_CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(scopes)}&state=spotify`;
+            window.location.href = url;
+        }
+        
+        function connectYouTube() {
+            const scopes = 'https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/youtubepartner';
+            const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${YOUTUBE_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=${encodeURIComponent(scopes)}&state=youtube`;
+            window.location.href = url;
+        }
+        
+        function updateAuthStatus(service, connected) {
+            const statusEl = document.getElementById(service + 'Status');
+            statusEl.textContent = connected ? 'Connected ✓' : 'Not Connected';
+            statusEl.className = 'status ' + (connected ? 'status-connected' : 'status-disconnected');
+            
+            if (spotifyToken && youtubeToken) {
+                document.getElementById('continueBtn').disabled = false;
+            }
+        }
+        
+        async function loadSpotifyData() {
+            if (!spotifyToken) return;
+            
+            try {
+                // Fetch playlists
+                const playlistRes = await fetch('https://api.spotify.com/v1/me/playlists?limit=50', {
+                    headers: { 'Authorization': `Bearer ${spotifyToken}` }
+                });
+                const playlistData = await playlistRes.json();
+                
+                // Fetch podcasts
+                const podcastRes = await fetch('https://api.spotify.com/v1/me/shows?limit=50', {
+                    headers: { 'Authorization': `Bearer ${spotifyToken}` }
+                });
+                const podcastData = await podcastRes.json();
+                
+                playlists = playlistData.items?.map(pl => ({
+                    id: pl.id,
+                    name: pl.name,
+                    type: 'playlist',
+                    trackCount: pl.tracks.total
+                })) || [];
+                
+                podcasts = podcastData.items?.map(item => ({
+                    id: item.show.id,
+                    name: item.show.name,
+                    type: 'podcast',
+                    publisher: item.show.publisher
+                })) || [];
+                
+                displayItems();
+                showStep(2);
+            } catch (error) {
+                alert('Error loading Spotify data: ' + error.message);
+            }
+        }
+        
+        function displayItems() {
+            const playlistList = document.getElementById('playlistList');
+            const podcastList = document.getElementById('podcastList');
+            
+            document.getElementById('playlistCount').textContent = playlists.length;
+            document.getElementById('podcastCount').textContent = podcasts.length;
+            
+            playlistList.innerHTML = playlists.map(pl => `
+                <div class="item" onclick="toggleItem('${pl.id}')">
+                    <input type="checkbox" id="cb-${pl.id}" onchange="event.stopPropagation(); toggleItem('${pl.id}')">
+                    <span class="item-icon">🎵</span>
+                    <div class="item-info">
+                        <div class="item-name">${pl.name}</div>
+                        <div class="item-meta">${pl.trackCount} tracks</div>
+                    </div>
+                </div>
+            `).join('');
+            
+            podcastList.innerHTML = podcasts.map(pc => `
+                <div class="item" onclick="toggleItem('${pc.id}')">
+                    <input type="checkbox" id="cb-${pc.id}" onchange="event.stopPropagation(); toggleItem('${pc.id}')">
+                    <span class="item-icon">🎙️</span>
+                    <div class="item-info">
+                        <div class="item-name">${pc.name}</div>
+                        <div class="item-meta">${pc.publisher}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function toggleItem(id) {
+            const checkbox = document.getElementById('cb-' + id);
+            checkbox.checked = !checkbox.checked;
+            
+            if (checkbox.checked) {
+                selectedItems.add(id);
+            } else {
+                selectedItems.delete(id);
+            }
+            
+            document.getElementById('selectedCount').textContent = selectedItems.size;
+        }
+        
+        function selectAll() {
+            [...playlists, ...podcasts].forEach(item => {
+                selectedItems.add(item.id);
+                document.getElementById('cb-' + item.id).checked = true;
+            });
+            document.getElementById('selectedCount').textContent = selectedItems.size;
+        }
+        
+        function deselectAll() {
+            selectedItems.clear();
+            [...playlists, ...podcasts].forEach(item => {
+                document.getElementById('cb-' + item.id).checked = false;
+            });
+            document.getElementById('selectedCount').textContent = 0;
+        }
+        
+        async function startTransfer() {
+            if (selectedItems.size === 0) return;
+            
+            showStep(3);
+            const transferList = document.getElementById('transferList');
+            const allItems = [...playlists, ...podcasts];
+            
+            for (const itemId of selectedItems) {
+                const item = allItems.find(i => i.id === itemId);
+                if (!item) continue;
+                
+                const statusDiv = document.createElement('div');
+                statusDiv.className = 'transfer-status';
+                statusDiv.innerHTML = `
+                    <div>
+                        <span class="item-icon">${item.type === 'playlist' ? '🎵' : '🎙️'}</span>
+                        <strong>${item.name}</strong>
+                        <div style="font-size: 14px; color: #666;" id="status-${item.id}">Searching...</div>
+                    </div>
+                    <div class="spinner"></div>
+                `;
+                transferList.appendChild(statusDiv);
+                
+                await searchAndTransfer(item, statusDiv);
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        }
+        
+        async function searchAndTransfer(item, statusDiv) {
+            try {
+                const query = encodeURIComponent(item.name);
+                const type = item.type === 'podcast' ? 'channel,playlist' : 'playlist';
+                
+                const response = await fetch(
+                    `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=${type}&maxResults=1`,
+                    { headers: { 'Authorization': `Bearer ${youtubeToken}` } }
+                );
+                
+                const data = await response.json();
+                const statusText = document.getElementById('status-' + item.id);
+                const spinner = statusDiv.querySelector('.spinner');
+                
+                if (data.items && data.items.length > 0) {
+                    statusText.textContent = `Found: ${data.items[0].snippet.title}`;
+                    spinner.textContent = '✓';
+                    spinner.className = 'status-icon';
+                    spinner.style.color = 'green';
+                } else {
+                    statusText.textContent = 'Not found on YouTube Music';
+                    spinner.textContent = '⚠️';
+                    spinner.className = 'status-icon';
+                }
+            } catch (error) {
+                const statusText = document.getElementById('status-' + item.id);
+                const spinner = statusDiv.querySelector('.spinner');
+                statusText.textContent = 'Error: ' + error.message;
+                spinner.textContent = '✗';
+                spinner.className = 'status-icon';
+                spinner.style.color = 'red';
+            }
+        }
+        
+        function showStep(step) {
+            document.getElementById('step1').classList.add('hidden');
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step3').classList.add('hidden');
+            document.getElementById('step' + step).classList.remove('hidden');
+        }
+        
+        function backToSelection() {
+            document.getElementById('transferList').innerHTML = '';
+            showStep(2);
+        }
+    </script>
+</body>
+</html>
